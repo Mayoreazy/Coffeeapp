@@ -11,12 +11,16 @@ import { FulfillmentLayer } from '@/components/checkout/FulfillmentLayer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Toast } from '@/components/ui/Toast';
 
+import { useCart } from '@/lib/cart-context';
+
 export default function Home() {
+  const { cart, addToCart, clearCart } = useCart();
   const [activeLayer, setActiveLayer] = useState<'discovery' | 'checkout' | 'fulfillment'>('discovery');
   const [showCustomization, setShowCustomization] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('hot');
   const [toast, setToast] = useState<{ message: string, submessage?: string, visible: boolean }>({ message: '', visible: false });
+  const [placedOrder, setPlacedOrder] = useState<any>(null);
 
   const showToast = (message: string, submessage?: string) => {
     setToast({ message, submessage, visible: true });
@@ -29,13 +33,44 @@ export default function Home() {
   };
 
   const handleAddToCart = () => {
-    setShowCustomization(false);
-    showToast('Added to Cart', 'Your selection has been saved');
+    if (selectedProduct) {
+      addToCart(selectedProduct, 1);
+      setShowCustomization(false);
+      showToast('Added to Cart', 'Your selection has been saved');
+    }
   };
 
-  const handlePlaceOrder = () => {
-    setActiveLayer('fulfillment');
-    showToast('Email Sent Successfully', 'Order confirmation sent to your inbox');
+  const handlePlaceOrder = async () => {
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: '1', // Dummy ID for demo
+          items: cart.map(item => ({
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          address: 'Antigravity Landing Zone A'
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPlacedOrder(data.order);
+        setActiveLayer('fulfillment');
+        clearCart();
+        showToast('Order Placed!', 'Confirmation sent to your inbox');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error('Order Error:', error);
+      showToast('Order Failed', 'Could not process your request');
+    }
   };
 
   return (
@@ -82,6 +117,7 @@ export default function Home() {
       {activeLayer === 'fulfillment' && (
         <FulfillmentLayer
           onClose={() => setActiveLayer('discovery')}
+          order={placedOrder}
         />
       )}
 
@@ -92,7 +128,7 @@ export default function Home() {
           if (tab === 'cart') setActiveLayer('checkout');
           if (tab === 'orders') setActiveLayer('fulfillment');
         }}
-        cartCount={1}
+        cartCount={cart.length}
       />
     </MobileFrame>
   );

@@ -3,9 +3,10 @@ import { X, CheckCircle, Check, Coffee, Rocket, PackageCheck, Star, Phone, Therm
 
 interface FulfillmentLayerProps {
     onClose: () => void;
+    order?: any;
 }
 
-export const FulfillmentLayer: React.FC<FulfillmentLayerProps> = ({ onClose }) => {
+export const FulfillmentLayer: React.FC<FulfillmentLayerProps> = ({ onClose, order }) => {
     return (
         <div className="absolute inset-0 bg-white z-[120] overflow-y-auto hide-scrollbar animate-fade-in">
             <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-4 sticky top-0 bg-white z-10">
@@ -22,8 +23,8 @@ export const FulfillmentLayer: React.FC<FulfillmentLayerProps> = ({ onClose }) =
                         <CheckCircle className="w-10 h-10 text-green-600" />
                     </div>
                     <h3 className="text-2xl font-bold text-stone-900 mb-2">Order Confirmed!</h3>
-                    <p className="text-sm text-stone-600 mb-1">Order #2841</p>
-                    <p className="text-xs text-stone-500">Estimated arrival: 8-12 minutes</p>
+                    <p className="text-sm text-stone-600 mb-1">Order #{order?.id?.slice(-4) || '2841'}</p>
+                    <p className="text-xs text-stone-500">Estimated arrival: {order?.eta || '8-12 minutes'}</p>
                 </div>
 
                 {/* Steaming Coffee Animation */}
